@@ -362,8 +362,6 @@ function App() {
     : history;
 
   const pinned = filtered.filter(h => h.pinned);
-  const today  = filtered.filter(h => !h.pinned && h.date === new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }));
-  const older  = filtered.filter(h => !h.pinned && h.date !== new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }));
 
   const currentProjectId  = history.find(h => h.id === activeChat)?.projectId ?? null;
   const currentChatEntry  = history.find(h => h.id === activeChat) ?? null;
