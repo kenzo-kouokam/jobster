@@ -144,10 +144,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); over
 }
 .project-item:hover { background: var(--sb-hover); }
 .project-item:hover .project-actions { opacity: 1; }
+.project-item:hover .project-icon { transform: scale(1.1); }
 .project-icon {
   width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px;
+  font-size: 13px; transition: transform 0.15s;
 }
 .project-name { flex: 1; font-size: 13px; font-weight: 400; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .project-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
@@ -298,9 +299,38 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); over
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
 
 .landing {
-  flex: 1; display: flex; flex-direction: column;
+  position: relative;
+  flex: 1; display: flex; flex-direction: row;
   align-items: center; justify-content: center;
   padding: 40px 24px; gap: 20px;
+  overflow: hidden;
+}
+
+/* Decorative blurred gradient blobs — purely cosmetic, sit behind everything */
+.landing-blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(60px); opacity: 0.55; pointer-events: none; z-index: 0;
+  animation: blobDrift 14s ease-in-out infinite;
+}
+.landing-blob-1 {
+  width: 420px; height: 420px; top: -120px; left: -80px;
+  background: radial-gradient(circle, var(--blue-mid), transparent 70%);
+}
+.landing-blob-2 {
+  width: 380px; height: 380px; bottom: -140px; right: 4%;
+  background: radial-gradient(circle, var(--green-mid), transparent 70%);
+  animation-delay: -6s;
+}
+@keyframes blobDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(24px, -18px) scale(1.06); }
+}
+
+.landing-content {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px; flex: 1 1 480px; max-width: 520px;
   animation: fadeUp 0.5s ease both;
 }
 .landing-badge {
@@ -317,6 +347,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); over
 .landing-title span { color: var(--blue); }
 .landing-sub { font-size: 15.5px; color: var(--text-muted); text-align: center; max-width: 370px; line-height: 1.65; }
 .landing-btn {
+  position: relative; overflow: hidden;
   padding: 13px 32px;
   background: linear-gradient(135deg, var(--blue), var(--green));
   border: none; border-radius: 50px; color: #fff;
@@ -325,6 +356,70 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); over
   box-shadow: 0 6px 22px rgba(24,95,165,0.3);
 }
 .landing-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(24,95,165,0.4); }
+.landing-btn:active { transform: translateY(0) scale(0.98); }
+/* Diagonal shine sweep on hover */
+.landing-btn::after {
+  content: ''; position: absolute; top: 0; left: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+.landing-btn:hover::after { left: 140%; }
+
+/* ── Landing visual: floating mock cards (CSS-only illustration) ── */
+.landing-visual {
+  position: relative; z-index: 1;
+  flex: 1 1 380px; max-width: 420px; height: 380px;
+  display: flex; align-items: center; justify-content: center;
+}
+.float-card {
+  position: absolute;
+  background: var(--bg2); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+  padding: 12px 14px;
+  animation: cardPopIn 0.6s cubic-bezier(0.34,1.4,0.64,1) both, floatY 6s ease-in-out infinite;
+}
+.float-card-1 {
+  top: 6%; left: 4%; width: 200px;
+  animation-delay: 0.1s, 0s;
+}
+.float-card-2 {
+  top: 42%; right: 0; width: 188px;
+  animation-delay: 0.25s, -2s;
+}
+.float-card-3 {
+  bottom: 4%; left: 14%; width: 178px;
+  animation-delay: 0.4s, -4s;
+}
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.float-card-icon { font-size: 18px; margin-bottom: 6px; }
+.float-card-title { font-size: 12.5px; font-weight: 600; color: var(--text); margin-top: 6px; }
+.float-card-lines { display: flex; flex-direction: column; gap: 6px; }
+.float-line { display: block; height: 6px; border-radius: 4px; background: var(--border-soft); }
+.float-line.w-70 { width: 70%; }
+.float-line.w-40 { width: 40%; }
+.float-chip {
+  display: inline-flex; align-items: center;
+  font-size: 10.5px; font-weight: 500; padding: 3px 9px;
+  border-radius: 20px; margin: 0 4px 4px 0;
+  background: var(--blue-soft); color: var(--blue);
+  border: 1px solid var(--blue-mid);
+}
+.float-chip-alt { background: var(--green-soft); color: var(--green); border-color: var(--green-mid); }
+.float-chip-green { background: var(--green-soft); color: var(--green); border-color: var(--green-mid); }
+.float-check {
+  position: absolute; top: 14%; right: 18%;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; box-shadow: 0 6px 18px rgba(15,110,86,0.35);
+  animation: cardPopIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.55s both, floatY 5s ease-in-out infinite;
+  animation-delay: 0.55s, -1s;
+}
 
 /* "Découvrir Jobster" secondary link */
 .landing-discover-link {
@@ -453,12 +548,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); over
   background: var(--sb-hover);
   color: var(--text);
 }
+.sb-nav-item:hover .sb-nav-icon { transform: scale(1.15); }
 .sb-nav-item.active {
   background: var(--sb-active);
   color: var(--text);
   font-weight: 500;
 }
-.sb-nav-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.sb-nav-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; transition: transform 0.15s; display: inline-block; }
 .sb-nav-label { flex: 1; }
 
 /* ══════════════════════════════
@@ -725,6 +821,12 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); over
   .landing-title { font-size: 36px; }
   .view-body { padding: 20px 24px; }
   .view-header { padding: 16px 24px 14px; }
+}
+
+/* ── Below 900px: drop the decorative visual, center the text column ── */
+@media (max-width: 900px) {
+  .landing-visual { display: none; }
+  .landing { justify-content: center; }
 }
 
 /* ── Tablet / small laptop (< 768px) ── */

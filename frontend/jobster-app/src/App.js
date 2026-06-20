@@ -632,13 +632,40 @@ function App() {
         {/* ── Landing (no chat open) ── */}
         {activeView === 'landing' && (
           <div className="landing">
-            <div className="landing-badge"><span className="landing-dot" /> Agent IA actif · {LLM_LABEL}</div>
-            <h1 className="landing-title">Trouve ton emploi<br /><span>avec sérénité.</span></h1>
-            <p className="landing-sub">Recherche, analyse, postule. Ton agent IA s'occupe du reste.</p>
-            <button className="landing-btn" onClick={() => startNewChat()}>Commencer une recherche →</button>
-            <button className="landing-discover-link" onClick={() => setActiveView('guide')}>
-              Découvrir ce que l'agent peut faire →
-            </button>
+            <div className="landing-blob landing-blob-1" />
+            <div className="landing-blob landing-blob-2" />
+
+            <div className="landing-content">
+              <div className="landing-badge"><span className="landing-dot" /> Agent IA actif · {LLM_LABEL}</div>
+              <h1 className="landing-title">Trouve ton emploi<br /><span>avec sérénité.</span></h1>
+              <p className="landing-sub">Recherche, analyse, postule. Ton agent IA s'occupe du reste.</p>
+              <button className="landing-btn" onClick={() => startNewChat()}>Commencer une recherche →</button>
+              <button className="landing-discover-link" onClick={() => setActiveView('guide')}>
+                Découvrir ce que l'agent peut faire →
+              </button>
+            </div>
+
+            {/* Decorative floating mockup — purely illustrative, no real data */}
+            <div className="landing-visual" aria-hidden="true">
+              <div className="float-card float-card-1">
+                <div className="float-card-icon">💬</div>
+                <div className="float-card-lines">
+                  <span className="float-line w-70" />
+                  <span className="float-line w-40" />
+                </div>
+              </div>
+              <div className="float-card float-card-2">
+                <span className="float-chip">📍 Lyon</span>
+                <span className="float-chip float-chip-alt">Alternance</span>
+                <div className="float-card-title">Développeur Web</div>
+              </div>
+              <div className="float-card float-card-3">
+                <div className="float-card-icon">🎪</div>
+                <div className="float-card-title">Job Dating</div>
+                <span className="float-chip float-chip-green">22 juin</span>
+              </div>
+              <div className="float-check">✓</div>
+            </div>
           </div>
         )}
 
