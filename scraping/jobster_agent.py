@@ -799,13 +799,38 @@ def scraper_infos_entreprise(message_complet):
     infos_news = "Non accessible."
     infos_societe = "Non accessible."
 
+    # Une requête peut "réussir" (HTTP 200, pas d'exception) tout en ne renvoyant
+    # qu'une page de blocage anti-bot / CAPTCHA / "aucun résultat" — ce texte non
+    # vide passait alors pour une vraie info et le LLM le confondait avec du
+    # contenu réel (constaté : Glassdoor bloque puis le LLM cite ses "systèmes de
+    # sécurité avancés" comme s'il s'agissait d'une info sur l'entreprise).
+    def _scraping_invalide(texte, status_code=None):
+        if not texte or len(texte.strip()) < 50:
+            return True
+        if status_code is not None and status_code != 200:
+            return True
+        mots_blocage = [
+            "captcha", "unusual traffic", "vérifiez que vous êtes humain",
+            "verifiez que vous etes humain", "are you a human", "access denied",
+            "accès refusé", "sécurité avancée pour protéger",
+            "systèmes de sécurité avancés", "se protéger contre les robots",
+            "détecté un trafic inhabituel", "aucun résultat", "aucune entreprise trouvée",
+            "0 résultat", "page non trouvée", "404",
+        ]
+        t = texte.lower()
+        return any(m in t for m in mots_blocage)
+
     try:
         url = f"https://www.glassdoor.fr/Recherche/results.htm?keyword={entreprise_plus}"
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0 Chrome/120.0.0.0"}, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         for tag in soup(["script", "style"]): tag.decompose()
-        infos_glassdoor = soup.get_text(separator=" ", strip=True)[:1200]
-        print(f"  [Outil 8] Glassdoor OK")
+        texte = soup.get_text(separator=" ", strip=True)[:1200]
+        if not _scraping_invalide(texte, r.status_code):
+            infos_glassdoor = texte
+            print(f"  [Outil 8] Glassdoor OK")
+        else:
+            print(f"  [Outil 8] Glassdoor bloqué/vide")
     except: pass
 
     try:
@@ -813,8 +838,12 @@ def scraper_infos_entreprise(message_complet):
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0 Chrome/120.0.0.0"}, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         for tag in soup(["script", "style"]): tag.decompose()
-        infos_news = soup.get_text(separator=" ", strip=True)[:1200]
-        print(f"  [Outil 8] Google News OK")
+        texte = soup.get_text(separator=" ", strip=True)[:1200]
+        if not _scraping_invalide(texte, r.status_code):
+            infos_news = texte
+            print(f"  [Outil 8] Google News OK")
+        else:
+            print(f"  [Outil 8] Google News bloqué/vide")
     except: pass
 
     try:
@@ -822,8 +851,12 @@ def scraper_infos_entreprise(message_complet):
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0 Chrome/120.0.0.0"}, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         for tag in soup(["script", "style"]): tag.decompose()
-        infos_societe = soup.get_text(separator=" ", strip=True)[:1200]
-        print(f"  [Outil 8] Societe.com OK")
+        texte = soup.get_text(separator=" ", strip=True)[:1200]
+        if not _scraping_invalide(texte, r.status_code):
+            infos_societe = texte
+            print(f"  [Outil 8] Societe.com OK")
+        else:
+            print(f"  [Outil 8] Societe.com bloqué/vide")
     except: pass
 
     # Si les 3 sources ont échoué, il n'y a aucune donnée réelle à synthétiser —
