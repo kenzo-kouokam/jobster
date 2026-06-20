@@ -4,13 +4,6 @@ Ce dossier contient le moteur de Jobster : le scraper multi-sources et l'agent I
 
 ---
 
-## Responsables
-
-- **Scraping / Outils :** @Yahia — `jobster_scraper.py`, robustesse, `requirements.txt`
-- **IA / MCP / Agent :** @Gilpropm (Gildas) — `jobster_agent.py`, routing outils, system prompt
-
----
-
 ## Fichiers
 
 ```
@@ -59,7 +52,7 @@ Ce fichier doit aussi être copié dans `backend/` pour que le serveur FastAPI p
 copy scraping\.env backend\.env
 ```
 
-Demande les clés à Gildas si tu ne les as pas encore.
+Obtenir tes propres clés gratuitement : voir [`DEPLOY.md`](../DEPLOY.md).
 
 ---
 

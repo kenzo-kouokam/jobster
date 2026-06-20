@@ -4,13 +4,6 @@ Serveur Python qui fait le lien entre le frontend, l'IA (Ollama) et les outils d
 
 ---
 
-## Responsables
-
-- **IA / MCP / Architecture :** @Gilpropm (Gildas) — `server.py`, system prompt, routing
-- **Backend API / Endpoints :** @karisma (Cédric) — endpoints Phase 2 (`/candidatures`, `/profile`, `/documents`)
-
----
-
 ## Ce que fait ce serveur
 
 Quand un utilisateur tape une question dans le chat :
@@ -69,8 +62,8 @@ Tu dois voir qwen3:1.7b dans la liste.
 
 ```
 cd C:\Users\TonPrenom\Documents
-git clone https://github.com/Gilpropm/Jobster-hephaestus.git
-cd Jobster-hephaestus
+git clone https://github.com/kenzo-kouokam/jobster.git
+cd jobster
 ```
 
 Remplace TonPrenom par ton vrai nom d'utilisateur Windows.
@@ -131,7 +124,7 @@ Pour copier directement depuis scraping/ :
 copy ..\scraping\.env .env
 ```
 
-Demande les clés à Gildas si tu ne les as pas encore.
+Obtenir tes propres clés gratuitement : voir [`DEPLOY.md`](../DEPLOY.md).
 
 ---
 

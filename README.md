@@ -5,7 +5,9 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org)
 [![Groq](https://img.shields.io/badge/LLM-Groq%20%2F%20Ollama-F55036?style=flat-square)](https://groq.com)
 
-**🔗 Démo en ligne : [à compléter après déploiement](https://jobster.vercel.app)**
+**🔗 Démo en ligne : [jobster-psi.vercel.app](https://jobster-psi.vercel.app)**
+
+> Note : le backend (Render, free tier) peut prendre 30-50s à répondre s'il était inactif depuis plus de 15 min.
 
 ---
 

@@ -2,8 +2,6 @@
 
 Interface React de Jobster — application de chat mono-page (pas de site vitrine multi-pages).
 
-**Responsable :** @boolshyt (Gendell) — propriétaire de `frontend/` et `docs/`
-
 ---
 
 ## Ce que fait ce dossier
