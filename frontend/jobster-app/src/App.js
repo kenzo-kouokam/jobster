@@ -73,9 +73,20 @@ function App() {
 
   // ── Toast notifications ──
   const [toast, setToast] = useState(null);
-  const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type });
+  const showToast = useCallback((message, type = 'success', onClick = null) => {
+    setToast({ message, type, onClick });
   }, []);
+
+  // Refs synced with state — read in updateMessages() to know, at the moment a
+  // response arrives, whether the user is still looking at that chat. A plain
+  // state read there would be stale if the user navigated away while the
+  // request was in flight (the callback closure captures render-time values).
+  const activeViewRef = useRef(activeView);
+  const activeChatRef = useRef(activeChat);
+  const historyRef    = useRef(history);
+  useEffect(() => { activeViewRef.current = activeView; }, [activeView]);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+  useEffect(() => { historyRef.current = history; }, [history]);
 
   // ── Profile data for banner (loaded once on mount) ──
   const [profileSummary, setProfileSummary] = useState(null);
@@ -95,7 +106,7 @@ function App() {
 
   // ── P2-B : Charger les favoris depuis le backend au démarrage ──
   useEffect(() => {
-    fetch(`/favorites`)
+    fetch(`${API_BASE_URL}/favorites`)
       .then(r => r.json())
       .then(data => {
         if (data.favorites && data.favorites.length > 0) {
@@ -115,7 +126,7 @@ function App() {
 
   // ── Load profile summary for chat banner ──
   useEffect(() => {
-    fetch(`/profile`)
+    fetch(`${API_BASE_URL}/profile`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.profile) setProfileSummary(data.profile);
@@ -125,7 +136,7 @@ function App() {
 
   // ── P2-C : Charger les projets depuis le backend au démarrage ──
   useEffect(() => {
-    fetch(`/projects`)
+    fetch(`${API_BASE_URL}/projects`)
       .then(r => r.json())
       .then(data => {
         if (data.projects && data.projects.length > 0) {
@@ -179,6 +190,21 @@ function App() {
     // update lastUpdated timestamp on every new message
     const now = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
     setHistory(prev => prev.map(h => h.id === id ? { ...h, lastUpdated: now } : h));
+
+    // Notify the user if a response just arrived for a chat they've navigated
+    // away from (e.g. they switched to Candidatures while "rapport entreprise"
+    // was still running). Without this, the answer is saved silently and they'd
+    // only see it by clicking back into that exact chat.
+    const lastMsg = messages[messages.length - 1];
+    const isViewingThisChat = ['chat', 'project'].includes(activeViewRef.current) && activeChatRef.current === id;
+    if (lastMsg?.role === 'assistant' && !isViewingThisChat) {
+      const title = historyRef.current.find(h => h.id === id)?.title || 'Nouvelle recherche';
+      showToast(`Réponse prête · ${title}`, 'info', () => {
+        setActiveChat(id);
+        setActiveView('chat');
+        setActiveProjectId(null);
+      });
+    }
   };
 
   const deleteChat = (id) => {
@@ -218,7 +244,7 @@ function App() {
     setAddingProject(false);
 
     // P2-C : Persister dans le backend (fire-and-forget)
-    fetch(`/projects`, {
+    fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newProj.name, emoji: newProj.icon, color: newProj.color }),
@@ -300,7 +326,7 @@ function App() {
       setFavorites(prev => [...prev, newFav]);
       showToast('Ajouté aux favoris ❤️');
       // Sync backend — récupère l'ID généré pour les futures suppressions
-      fetch(`/favorites`, {
+      fetch(`${API_BASE_URL}/favorites`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -340,7 +366,7 @@ function App() {
     setHistory(prev => prev.map(h => h.id === chatId ? { ...h, projectId: localId } : h));
 
     // P2-C : Persister dans le backend
-    fetch(`/projects`, {
+    fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newProj.name, emoji: newProj.icon, color: newProj.color }),
@@ -803,7 +829,7 @@ function App() {
                         onToggleFavorite={() => toggleFavorite(job)}
                         isSaved={jobKey ? jobKey in savedCandidatures : false}
                         onAddToTracker={(j) => {
-                          return fetch(`/candidatures`, {
+                          return fetch(`${API_BASE_URL}/candidatures`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1012,7 +1038,7 @@ function App() {
       </main>
 
       {/* ── Toast notification overlay ── */}
-      <Toast toast={toast} onClose={() => setToast(null)} />
+      <Toast toast={toast} onClose={() => setToast(null)} onAction={() => { toast?.onClick?.(); setToast(null); }} />
 
     </div>
   );

@@ -36,6 +36,13 @@
   color: #1D4ED8;
 }
 
+.toast--clickable {
+  cursor: pointer;
+}
+.toast--clickable:hover {
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
+}
+
 .toast-icon {
   font-size: 15px;
   flex-shrink: 0;
