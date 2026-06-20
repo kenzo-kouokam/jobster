@@ -663,7 +663,17 @@ def appeler_outil_mcp(message: str):
             return formater_outil(calculer_matching(message)), None, False, False, None
         if any(m in d for m in ["analyse cette offre", "analyse offre", "décrypte offre"]) and urls:
             return formater_outil(analyser_offre_url(urls[0])), None, False, False, None
-        if urls and len(message.strip()) < 80:
+        # Le fallback générique "URL + message court → analyse d'offre" ne doit
+        # pas intercepter les commandes des outils sans URL (constaté en test :
+        # "tracker ajouter Capgemini développeur https://..." tombait ici au lieu
+        # de la branche tracker, faute de vérifier les mots-clés avant).
+        mots_outils_prioritaires_sur_url = (
+            ["tracker", "mes candidatures", "ajouter candidature", "voir candidature",
+             "statut candidature", "rapport entreprise", "infos entreprise",
+             "analyse entreprise", "que sais-tu de", "rappel", "relance", "ics"]
+            + MOTS_EVENEMENTS + MOTS_BONNE_BOITE + MOTS_ROME + MOTS_MARCHE + MOTS_AGENCE
+        )
+        if urls and len(message.strip()) < 80 and not any(m in d for m in mots_outils_prioritaires_sur_url):
             return formater_outil(analyser_offre_url(urls[0])), None, False, False, None
 
         # ── Outils sans URL ──
