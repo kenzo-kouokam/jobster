@@ -82,10 +82,11 @@ MOTS_EVENEMENTS = [
     # Évènement / évènements (avec et sans accents, singulier/pluriel)
     "évènement", "evenement", "événement", "evenements", "évènements", "événements",
     "événements emploi", "evènements emploi", "evenements emploi",
-    # Salon(s)
+    # Salon(s) — uniquement les formes qualifiées par "emploi/recrutement/professionnel" :
+    # "salon"/"salons" seuls sont volontairement exclus, car ils créaient un faux
+    # positif sur des requêtes comme "vendeur en salon de coiffure" (constaté en test).
     "salon emploi", "salon de l'emploi", "salon de l emploi", "salons emploi",
     "salon recrutement", "salon de recrutement", "salon professionnel",
-    "salon", "salons",
     # Job dating / speed recruiting / variantes anglicismes
     "job dating", "job datings", "jobdating", "speed recruiting", "speed dating recrutement",
     "speed job dating", "job fair", "career fair", "hiring event", "recruitment day",
