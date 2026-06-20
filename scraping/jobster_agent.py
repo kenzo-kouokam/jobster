@@ -1097,8 +1097,11 @@ Texte : {texte[:400]}"""
             f"💡 Importe ce fichier dans Google Calendar, Outlook ou Apple Calendar !")
 
 
-def get_ft_token():
-    """Récupère un token France Travail (réutilisable pour toutes les APIs)."""
+def get_ft_token(scope="api_offresdemploiv2 nomenclatureRome o2dsoffre"):
+    """
+    Récupère un token France Travail OAuth2.
+    Même credentials pour toutes les APIs FT — seul le scope change.
+    """
     from dotenv import load_dotenv
     load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend', '.env'))
     url = "https://entreprise.francetravail.fr/connexion/oauth2/access_token"
@@ -1106,10 +1109,159 @@ def get_ft_token():
         "grant_type": "client_credentials",
         "client_id": os.getenv("FRANCE_TRAVAIL_CLIENT_ID"),
         "client_secret": os.getenv("FRANCE_TRAVAIL_CLIENT_SECRET"),
-        "scope": "api_offresdemploiv2 nomenclatureRome o2dsoffre",
+        "scope": scope,
     }
     r = requests.post(url, params={"realm": "/partenaire"}, data=data)
     return r.json().get("access_token", "")
+
+
+def api_evenement_detail_officiel(event_id: str) -> dict:
+    """
+    Récupère le détail complet d'un événement via l'API officielle France Travail.
+    Tente plusieurs noms de scope (la nomenclature FT est incohérente entre produits).
+    """
+    for version, scope in [
+        ("v1", "api_mesevenementsemploiv1"),
+        ("v1", "api_evenementsemploiv1"),
+        ("v1", "api_evenementsemploi_v1"),
+    ]:
+        try:
+            token = get_ft_token(scope=scope)
+            if not token:
+                continue
+
+            headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+            url = f"https://api.francetravail.io/partenaire/evenementsemploi/{version}/evenements/{event_id}"
+            r = requests.get(url, headers=headers, timeout=8)
+
+            print(f"  [API Events {version.upper()}] GET /evenements/{event_id} → HTTP {r.status_code}")
+            if r.status_code != 200:
+                continue
+
+            e = r.json()
+            if not isinstance(e, dict):
+                continue
+
+            lieu = e.get("lieuEvenement") or {}
+            if isinstance(lieu, str):
+                adresse_str, code_postal, ville_str = lieu, "", ""
+            else:
+                adresse_str = lieu.get("adresse") or lieu.get("libelleVoie") or ""
+                code_postal = lieu.get("codePostal") or ""
+                ville_str = lieu.get("ville") or lieu.get("libelle") or ""
+
+            organisateur_obj = e.get("organisateur") or {}
+            organisateur_nom = (
+                organisateur_obj.get("nom") if isinstance(organisateur_obj, dict)
+                else str(organisateur_obj)
+            ) or e.get("nomOrganisateur") or ""
+
+            nb_places = (
+                e.get("nombrePlacesDisponibles")
+                or e.get("nombrePlace")
+                or e.get("nbPlaces")
+            )
+
+            lien = (
+                e.get("lienInscription")
+                or e.get("lienEvenement")
+                or e.get("urlInscription")
+                or e.get("lien")
+                or ""
+            )
+
+            return {
+                "description":    (e.get("description") or e.get("programme") or "").strip(),
+                "adresse":        adresse_str.strip(),
+                "codePostal":     code_postal,
+                "ville":          ville_str,
+                "lien":           lien,
+                "organisateur":   organisateur_nom,
+                "nbPlaces":       nb_places,
+                "preinscription": e.get("preinscription") or e.get("inscription") or False,
+            }
+
+        except Exception as ex:
+            print(f"  [API Events {version.upper()}] Erreur : {ex}")
+            continue
+
+    return {}
+
+
+def api_evenement_detail_interne(event_id: str) -> dict:
+    """
+    Récupère le détail complet d'un événement via l'API interne de mesevenementsemploi.fr.
+    Endpoint: GET /api-candidat/mee/v1/de/evenement/detail/{id}
+    Requiert le header user_location: "2" — sans lui, HTTP 404.
+    """
+    import time as _time
+    try:
+        headers = {
+            "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer":         "https://mesevenementsemploi.francetravail.fr/mes-evenements-emploi/evenements",
+            "Accept":          "application/json, text/plain, */*",
+            "Content-Type":    "application/json",
+            "Origin":          "https://mesevenementsemploi.francetravail.fr",
+            "x-initialized-at": str(int(_time.time() * 1000)),
+            "user_location":   "2",
+        }
+        url = f"https://mesevenementsemploi.francetravail.fr/api-candidat/mee/v1/de/evenement/detail/{event_id}"
+        r = requests.get(url, headers=headers, timeout=8)
+
+        print(f"  [API Events Interne] GET /detail/{event_id} → HTTP {r.status_code}")
+        if r.status_code != 200:
+            return {}
+
+        e = r.json()
+        if not isinstance(e, dict):
+            return {}
+
+        nb_places_total = e.get("nbPlaceEnPhysique") or e.get("nbPlaceADistance") or None
+        nb_inscrits     = e.get("nbInscritEnPhysique", 0) + e.get("nbInscritADistance", 0)
+        nb_places_restantes = (nb_places_total - nb_inscrits) if nb_places_total else None
+
+        lien = (
+            e.get("urlAccesADistance") or e.get("urlParticipationDistance")
+            or e.get("lienEvenement") or e.get("urlInscription") or e.get("lien") or ""
+        )
+
+        prenom = e.get("prenomOrganisateur") or ""
+        nom    = e.get("nomOrganisateur") or ""
+        organisateur = f"{prenom} {nom}".strip() or (
+            (e.get("organisateur") or {}).get("nom") if isinstance(e.get("organisateur"), dict) else ""
+        )
+        email_organisateur = e.get("emailOrganisateur") or ""
+
+        objectifs = ", ".join(
+            t.get("libelle", "") for t in (e.get("tagsObjectif") or []) if t.get("libelle")
+        )
+        public_cible = ", ".join(
+            t.get("libelle", "") for t in (e.get("tagsCible") or []) if t.get("libelle")
+        )
+
+        secteur = e.get("nafLibelle") or ""
+
+        return {
+            "description":        (e.get("description") or "").strip(),
+            "deroulement":        (e.get("deroulement") or "").strip(),
+            "adresse":            (e.get("adresse") or "").strip(),
+            "codePostal":         e.get("codePostal") or "",
+            "ville":              e.get("ville") or "",
+            "lien":               lien,
+            "organisateur":       organisateur,
+            "emailOrganisateur":  email_organisateur,
+            "nbPlaces":           nb_places_total,
+            "nbPlacesRestantes":  nb_places_restantes,
+            "preinscription":     e.get("preinscription") or False,
+            "objectifs":          objectifs,
+            "publicCible":        public_cible,
+            "secteur":            secteur,
+            "estEnLigne":         e.get("estEnLigne") or False,
+        }
+
+    except Exception as ex:
+        print(f"  [API Events Interne] Erreur : {ex}")
+        return {}
 
 
 # ── API La Bonne Boite ────────────────────────────────────────
@@ -1282,7 +1434,7 @@ def api_evenements_emploi(ville="Paris", departement=None):
             "tagsType": [],
             "prerequis": [],
             "pageNumber": 0,
-            "pageSize": 8,
+            "pageSize": 40,
             "sortBy": "date_evenement",
             "offset": 0,
         }
@@ -1304,40 +1456,58 @@ def api_evenements_emploi(ville="Paris", departement=None):
             return (f"Aucun évènement emploi trouvé à {ville} pour le moment.\n\n"
                     f"💡 Essaie sur : https://mesevenementsemploi.francetravail.fr/")
 
-        resultat = f"🎪 **{total} évènements emploi** dans la région **{ville}** :\n\n"
-        for e in evenements[:8]:
+        # Structure enrichie pour le composant frontend EventCard (bouton "Je découvre")
+        items_struct = []
+        for e in evenements:
             titre = e.get("titre", "N/A")
-            date = e.get("dateEvenement", "N/A")
+            date_evt = e.get("dateEvenement", "")
             heure_debut = e.get("heureDebut", "")
             heure_fin = e.get("heureFin", "")
             city = e.get("ville") or ""
+            code_postal = e.get("codePostal") or ""
+            adresse = e.get("adresse") or e.get("lieuEvenement") or ""
             tag_type = (e.get("tagTypeEvenement") or {}).get("libelle", "")
             en_ligne = e.get("estEnLigne", False)
             preinscription = e.get("preinscription", False)
+            description = e.get("description") or e.get("descriptionEvenement") or e.get("programme") or ""
+            lien = (
+                e.get("lienEvenement")
+                or e.get("urlInscription")
+                or e.get("lienInscription")
+                or e.get("lien")
+                or ""
+            )
+            organisateur = (e.get("organisateur") or {}).get("nom") or e.get("nomOrganisateur") or ""
             nb_places = None
             for mode in (e.get("modeAcceesList") or []):
                 nb_places = mode.get("nombrePlace")
                 break
+            event_id = str(e.get("id") or e.get("idEvenement") or e.get("identifiant") or titre[:20])
+            items_struct.append({
+                "id":             event_id,
+                "titre":          titre,
+                "date":           date_evt,
+                "heureDebut":     heure_debut,
+                "heureFin":       heure_fin,
+                "ville":          city,
+                "codePostal":     code_postal,
+                "adresse":        adresse,
+                "type":           tag_type,
+                "enLigne":        en_ligne,
+                "preinscription": preinscription,
+                "nbPlaces":       nb_places,
+                "description":    description,
+                "lien":           lien,
+                "organisateur":   organisateur,
+            })
 
-            resultat += f"• **{titre}**\n"
-            horaire = f"{heure_debut}–{heure_fin}" if heure_debut else ""
-            lieu_str = "🌐 En ligne" if en_ligne else (f"📍 {city}" if city else "")
-            resultat += f"  📅 {date}"
-            if horaire:
-                resultat += f" {horaire}"
-            if lieu_str:
-                resultat += f" — {lieu_str}"
-            resultat += "\n"
-            if tag_type:
-                resultat += f"  🏷️ {tag_type}"
-            if nb_places:
-                resultat += f" | {nb_places} places"
-            if preinscription:
-                resultat += " | Préinscription requise"
-            resultat += "\n\n"
-
-        resultat += f"👉 Voir tous les évènements : https://mesevenementsemploi.francetravail.fr/"
-        return resultat
+        return {
+            "_type":  "events",
+            "_total": total,
+            "_ville": ville,
+            "_items": items_struct,
+            "_text":  f"🎪 **{total} évènements emploi** dans la région **{ville}**",
+        }
 
     except Exception as e:
         return f"Erreur Évènements emploi : {e}"

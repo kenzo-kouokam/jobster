@@ -82,10 +82,18 @@ MOTS_EVENEMENTS = [
     "évènement", "evenement", "événement", "salon emploi", "job dating",
     "forum emploi", "salon recrutement", "job fair", "journée recrutement",
     "événements emploi", "evènements emploi",
+    # Variantes naturelles supplémentaires (gap routing)
+    "salon", "salons", "speed recruiting", "matinale recrutement",
+    "recrutement près de", "recrutement pres de", "job datings",
 ]
 
 MOTS_BONNE_BOITE = [
-    "bonne boite", "bonne boîte", "entreprises qui recrutent", "candidature spontanée"
+    "bonne boite", "bonne boîte", "entreprises qui recrutent", "candidature spontanée",
+    # Variantes naturelles supplémentaires (gap routing)
+    "entreprises qui embauchent", "sociétés qui recrutent", "societes qui recrutent",
+    "boites qui recrutent", "boîtes qui recrutent", "boites qui embauchent",
+    "qui pourrait me recruter", "qui pourraient me recruter",
+    "qui cherchent du monde", "entreprises susceptibles", "entreprises qui pourraient",
 ]
 
 MOTS_MARCHE = [
@@ -104,6 +112,9 @@ MOTS_ROME = [
     # Patterns naturels supplémentaires : "métier data analyst", "métier infirmier", etc.
     "quel métier", "quel metier", "ce métier", "ce metier", "ce type de métier",
     "métier en ", "metier en ", "métier d'", "metier d'",
+    # Variantes naturelles supplémentaires (gap routing)
+    "me reconvertir", "se reconvertir", "envie de me reconvertir",
+    "vers quel métier", "vers quel metier", "quel métier choisir", "quel metier choisir",
 ]
 
 MOTS_PROFIL_QUERY = [
@@ -156,6 +167,11 @@ MOTS_VAGUE_PROFIL = [
     "recommend jobs", "recommend me jobs", "suggest jobs",
     "for my profile", "for my background", "for my skills",
     "that match what i", "matching my profile",
+    # Variantes naturelles supplémentaires (gap routing)
+    "opportunités pour mon profil", "opportunites pour mon profil",
+    "profil comme le mien", "comme le mien",
+    "qui colle à mon profil", "qui colle a mon profil",
+    "en lien avec mon profil", "adapté à ma situation", "adapte a ma situation",
 ]
 
 # Mots-clés trop génériques — si comprendre_demande() retourne ça, on utilise le profil
@@ -586,9 +602,10 @@ def format_profil_summary() -> str:
 
 def appeler_outil_mcp(message: str):
     """
-    Retourne (texte, offres_json, besoin_ollama, is_rome).
+    Retourne (texte, offres_json, besoin_ollama, is_rome, evenements_json).
     besoin_ollama=True → Ollama doit répondre.
     is_rome=True → la réponse est une fiche métier (pour le frontend).
+    evenements_json=liste d'évènements structurés (pour le composant EventCard), ou None.
     """
     try:
         from jobster_agent import (
@@ -608,19 +625,19 @@ def appeler_outil_mcp(message: str):
 
         # ── Outils spécifiques avec URL ──
         if any(m in d for m in ["lettre", "motivation"]) and urls:
-            return formater_outil(generer_lettre_motivation(message)), None, False, False
+            return formater_outil(generer_lettre_motivation(message)), None, False, False, None
         if any(m in d for m in ["adapter mon cv", "adapte mon cv", "cv adapté", "optimise mon cv"]) and urls:
-            return formater_outil(generer_cv_adapte(message)), None, False, False
+            return formater_outil(generer_cv_adapte(message)), None, False, False, None
         if any(m in d for m in ["prépare mail", "mail candidature", "texte formulaire"]) and urls:
-            return formater_outil(generer_copier_coller(message)), None, False, False
+            return formater_outil(generer_copier_coller(message)), None, False, False, None
         if any(m in d for m in ["liens utiles", "trouve recruteur"]) and urls:
-            return formater_outil(generer_urls_intelligentes(urls[0])), None, False, False
+            return formater_outil(generer_urls_intelligentes(urls[0])), None, False, False, None
         if any(m in d for m in ["match", "score", "compatible"]) and urls:
-            return formater_outil(calculer_matching(message)), None, False, False
+            return formater_outil(calculer_matching(message)), None, False, False, None
         if any(m in d for m in ["analyse cette offre", "analyse offre", "décrypte offre"]) and urls:
-            return formater_outil(analyser_offre_url(urls[0])), None, False, False
+            return formater_outil(analyser_offre_url(urls[0])), None, False, False, None
         if urls and len(message.strip()) < 80:
-            return formater_outil(analyser_offre_url(urls[0])), None, False, False
+            return formater_outil(analyser_offre_url(urls[0])), None, False, False, None
 
         # ── Outils sans URL ──
 
@@ -631,47 +648,66 @@ def appeler_outil_mcp(message: str):
                 return (
                     "Je n'ai pas encore de profil enregistré. "
                     "Rends-toi dans **Mon Profil** pour saisir tes informations et importer ton CV.",
-                    None, False, False
+                    None, False, False, None
                 )
-            return None, None, True, False  # Ollama répondra avec le profil en contexte
+            return None, None, True, False, None  # Ollama répondra avec le profil en contexte
 
         if any(m in d for m in ["rapport entreprise", "infos entreprise", "analyse entreprise", "que sais-tu de"]):
-            return formater_outil(scraper_infos_entreprise(message)), None, False, False
+            return formater_outil(scraper_infos_entreprise(message)), None, False, False, None
 
         if any(m in d for m in ["tracker", "mes candidatures", "ajouter candidature", "voir candidature", "statut candidature"]):
-            return formater_outil(tracker_candidature(message)), None, False, False
+            return formater_outil(tracker_candidature(message)), None, False, False, None
 
         if any(m in d for m in ["rappel", "relance", "ics"]):
-            return formater_outil(generer_rappels_ics(message)), None, False, False
+            return formater_outil(generer_rappels_ics(message)), None, False, False, None
 
         # ── APIs France Travail spéciales ──
         if any(m in d for m in MOTS_EVENEMENTS):
             infos = comprendre_demande(message)
             loc = infos.get("location", "Paris")
             r = api_evenements_emploi(loc, ville_vers_dept(loc))
-            return formater_outil(r), None, False, False
+            if isinstance(r, dict):
+                # api_evenements_emploi() retourne une structure enrichie
+                # ({_type, _total, _items, _text}) pour le composant EventCard du
+                # frontend. Le texte reste affiché dans le fil de chat, et les
+                # items structurés sont renvoyés à part dans le champ "evenements"
+                # de /chat pour que EventCard puisse les afficher en cartes
+                # cliquables (bouton "Je découvre" → GET /evenements/{id}).
+                lignes = [r.get("_text", f"Évènements emploi à {loc} :")]
+                for ev in r.get("_items", [])[:8]:
+                    titre = ev.get("titre", "Évènement")
+                    date_evt = ev.get("date", "")
+                    heure = ev.get("heureDebut", "")
+                    ville_evt = ev.get("ville", loc)
+                    lignes.append(f"\n• **{titre}**\n  📅 {date_evt} {heure} — 📍 {ville_evt}")
+                texte = "\n".join(lignes)
+                evenements_json = r.get("_items", [])[:8]
+            else:
+                texte = r
+                evenements_json = None
+            return formater_outil(texte), None, False, False, evenements_json
 
         if any(m in d for m in MOTS_BONNE_BOITE):
             infos = comprendre_demande(message)
             loc = infos.get("location", "Paris")
             r = api_la_bonne_boite(infos.get("keywords", ""), loc)
-            return formater_outil(r), None, False, False
+            return formater_outil(r), None, False, False, None
 
         if any(m in d for m in MOTS_MARCHE):
             infos = comprendre_demande(message)
             r = api_marche_travail(infos.get("keywords", message))
-            return formater_outil(r), None, False, False
+            return formater_outil(r), None, False, False, None
 
         if any(m in d for m in MOTS_AGENCE):
             infos = comprendre_demande(message)
             loc = infos.get("location", "Paris")
             r = api_agences_france_travail(loc, ville_vers_dept(loc))
-            return formater_outil(r), None, False, False
+            return formater_outil(r), None, False, False, None
 
         if any(m in d for m in MOTS_ROME):
             infos = comprendre_demande(message)
             r = api_rome_metier(infos.get("keywords", message))
-            return formater_outil(r), None, False, True  # 4e valeur = is_rome
+            return formater_outil(r), None, False, True, None  # 4e valeur = is_rome
 
         # ── Recherche d'offres (default si mots-clés détectés) ──
         if est_recherche_offres(message):
@@ -744,7 +780,7 @@ def appeler_outil_mcp(message: str):
                     "url":      o.get("lien", "#"),
                     "source":   o.get("source", ""),
                 } for o in offres]
-                return formater_offres(offres, keywords, location), offres_json, False, False
+                return formater_offres(offres, keywords, location), offres_json, False, False, None
 
             # ── Fallback si aucun résultat : essayer les autres villes du profil, puis national ──
             if location.lower() not in ("france", ""):
@@ -772,17 +808,17 @@ def appeler_outil_mcp(message: str):
                             prefix = f"*Pas de résultats à {location} — voici des offres à {fallback_loc} :*\n\n"
                         return (
                             prefix + formater_offres(offres_fallback, keywords, fallback_loc),
-                            offres_json, False, False
+                            offres_json, False, False, None
                         )
 
-            return "Aucune offre trouvée pour cette recherche. Essaie d'autres mots-clés ou une autre ville.", None, False, False
+            return "Aucune offre trouvée pour cette recherche. Essaie d'autres mots-clés ou une autre ville.", None, False, False, None
 
         # ── Pas d'outil détecté → Ollama ──
-        return None, None, True, False
+        return None, None, True, False, None
 
     except Exception as e:
         print(f"[MCP] Erreur : {e}")
-        return None, None, True, False
+        return None, None, True, False, None
 
 
 @app.get("/")
@@ -812,10 +848,10 @@ def chat(data: dict):
             return {"response": "Jobster n'est pas disponible pour le moment. Vérifie qu'Ollama est bien lancé (`ollama run qwen3:1.7b`) et réessaie.", "offres": None}
 
     # Sinon → détection d'outil
-    texte, offres, besoin_ollama, is_rome = appeler_outil_mcp(message)
+    texte, offres, besoin_ollama, is_rome, evenements = appeler_outil_mcp(message)
 
     if not besoin_ollama and texte:
-        return {"response": texte, "offres": offres, "rome": is_rome}
+        return {"response": texte, "offres": offres, "rome": is_rome, "evenements": evenements}
 
     # Fallback Ollama (aussi utilisé pour les requêtes profil/CV)
     try:
@@ -826,6 +862,24 @@ def chat(data: dict):
         return {"response": resp["message"]["content"], "offres": None}
     except Exception as e:
         return {"response": "Jobster n'est pas disponible pour le moment. Vérifie qu'Ollama est bien lancé (`ollama run qwen3:1.7b`) et réessaie.", "offres": None}
+
+
+@app.get("/evenements/{event_id}")
+def get_evenement_detail(event_id: str):
+    """
+    Détail enrichi d'un évènement emploi pour le bouton "Je découvre" (EventCard).
+    Tente l'API interne MEE en premier (description + déroulement complets),
+    puis l'API officielle France Travail en repli si l'interne ne renvoie rien.
+    Le frontend dégrade déjà gracieusement si cet endpoint échoue (catch silencieux
+    dans handleDiscoverEvent), donc aucune erreur 404/500 n'est renvoyée ici.
+    """
+    from jobster_agent import api_evenement_detail_interne, api_evenement_detail_officiel
+
+    detail = api_evenement_detail_interne(event_id)
+    if not detail:
+        detail = api_evenement_detail_officiel(event_id)
+
+    return {"event": detail}
 
 
 # ── Phase 2 : Tracker de candidatures ──────────────────────────────────────────

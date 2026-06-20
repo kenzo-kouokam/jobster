@@ -31,6 +31,8 @@ export default function Chat({
   chatId, initialMessages, onFirstMessage, onMessagesChange, onNewChat,
   projects, currentProjectId, onAssignToProject, onCreateAndAssign,
   favorites, onToggleFavorite, onAddToTracker, onRemoveFromTracker, savedCandidatures,
+  // Event favorites
+  eventFavorites, onToggleEventFavorite,
   // Chat header metadata
   chatTitle, chatDate, chatLastUpdated, onRenameChat,
 }) {
@@ -138,6 +140,7 @@ export default function Chat({
         role: 'assistant',
         content: data.response,
         offres: data.offres || null,
+        evenements: data.evenements || null,
         isRome: data.rome === true,
         ...attachToResponse,
       }];
@@ -167,6 +170,98 @@ export default function Chat({
   const handleQuickAction = useCallback((text) => {
     sendMessage(text);
   }, [sendMessage]);
+
+  // ── Discover event — inject formatted event details directly into the chat ──
+  const handleDiscoverEvent = useCallback(async (event) => {
+    const loadingMsg = { role: 'assistant', content: `⏳ Récupération des détails pour **${event.titre || 'cet évènement'}**…` };
+    const withLoading = [...messages, loadingMsg];
+    setMessages(withLoading);
+    onMessagesChange?.(withLoading);
+
+    // Try backend enrichment (needs api_evenementsemploi_v1 scope — silently skips if unavailable)
+    let enriched = { ...event };
+    try {
+      const res = await fetch(`${API_BASE_URL}/evenements/${encodeURIComponent(event.id)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.event) enriched = { ...enriched, ...data.event };
+      }
+    } catch (_) { /* use card data as fallback */ }
+
+    // Build France Travail website URL from id + title slug — always works
+    const buildFtUrl = (ev) => {
+      if (!ev.id) return null;
+      const slug = (ev.titre || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .slice(0, 80);
+      return `https://mesevenementsemploi.francetravail.fr/mes-evenements-emploi/evenement/${ev.id}/${slug}`;
+    };
+
+    const date = enriched.date || '';
+    const timeStr = enriched.heureDebut
+      ? ` à ${enriched.heureDebut}${enriched.heureFin ? `–${enriched.heureFin}` : ''}`
+      : '';
+    const adresseComplete = (enriched.estEnLigne || enriched.enLigne)
+      ? '🌐 En ligne'
+      : [enriched.adresse, enriched.codePostal, enriched.ville].filter(Boolean).join(', ') || 'Non précisé';
+
+    // Places: prefer restantes if available, fallback to total
+    const placesStr = (() => {
+      if (enriched.nbPlacesRestantes != null) {
+        return `${enriched.nbPlacesRestantes} place${enriched.nbPlacesRestantes !== 1 ? 's' : ''} restante${enriched.nbPlacesRestantes !== 1 ? 's' : ''}`;
+      }
+      if (enriched.nbPlaces != null) {
+        return `${enriched.nbPlaces} place${enriched.nbPlaces !== 1 ? 's' : ''}`;
+      }
+      return null;
+    })();
+
+    const listItems = [
+      `- 📅 **Date :** ${date}${timeStr}`,
+      `- 📍 **Lieu :** ${adresseComplete}`,
+      `- 🎪 **Type :** ${enriched.type || 'Évènement emploi'}`,
+      placesStr                         ? `- 🪑 **Places :** ${placesStr}` : null,
+      enriched.preinscription           ? `- 📋 **Préinscription requise**` : null,
+      enriched.secteur                  ? `- 🏭 **Secteur :** ${enriched.secteur}` : null,
+      enriched.publicCible              ? `- 👥 **Public :** ${enriched.publicCible}` : null,
+      enriched.objectifs                ? `- 🎯 **Objectifs :** ${enriched.objectifs}` : null,
+      enriched.organisateur             ? `- 🏢 **Organisateur :** ${enriched.organisateur}` : null,
+      enriched.emailOrganisateur        ? `- ✉️ **Contact :** ${enriched.emailOrganisateur}` : null,
+    ].filter(Boolean).join('\n');
+
+    const parts = [
+      `📋 **Détails de l'évènement**\n\n**${enriched.titre || 'Évènement'}**`,
+      listItems,
+    ];
+
+    if (enriched.description && enriched.description.trim()) {
+      parts.push(`📝 **Description**\n\n${enriched.description.trim()}`);
+    }
+
+    if (enriched.deroulement && enriched.deroulement.trim()) {
+      parts.push(`📌 **Déroulement**\n\n${enriched.deroulement.trim()}`);
+    }
+
+    // Link: inscription/online link if available, otherwise no link at all (we already have all the info)
+    const inscriptionLien = enriched.lien && enriched.lien.trim() ? enriched.lien.trim() : null;
+    if (inscriptionLien) {
+      parts.push(`[🔗 S'inscrire à cet évènement](${inscriptionLien})`);
+    } else if (!enriched.description && !enriched.deroulement) {
+      // Only show FT link if we got nothing useful back
+      const ftUrl = buildFtUrl(enriched);
+      if (ftUrl) parts.push(`[🌐 Voir la fiche complète sur France Travail](${ftUrl})`);
+    }
+
+    const detailMsg = parts.join('\n\n');
+    const final = [...messages, { role: 'assistant', content: detailMsg }];
+    setMessages(final);
+    onMessagesChange?.(final);
+  }, [messages, onMessagesChange]);
 
   const handleAddToTracker = useCallback((job) => {
     return fetch(`${API_BASE_URL}/candidatures`, {
@@ -390,6 +485,7 @@ export default function Chat({
                 role={msg.role}
                 content={msg.content}
                 offres={msg.offres}
+                evenements={msg.evenements}
                 isError={msg.isError}
                 isRome={msg.isRome}
                 analysedJob={msg.analysedJob}
@@ -400,6 +496,9 @@ export default function Chat({
                 onRemoveFromTracker={onRemoveFromTracker}
                 savedCandidatures={savedCandidatures}
                 onQuickAction={handleQuickAction}
+                eventFavorites={eventFavorites}
+                onToggleEventFavorite={onToggleEventFavorite}
+                onDiscoverEvent={handleDiscoverEvent}
               />
             ))}
             {loading && (

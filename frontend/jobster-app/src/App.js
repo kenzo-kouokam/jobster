@@ -64,6 +64,14 @@ function App() {
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jobster_favorites') || '[]'); } catch { return []; }
   });
+  // eventFavorites — ids of events saved via ❤️ on EventCards (local only, pas de backend dédié)
+  const [eventFavorites, setEventFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jobster_event_favorites') || '[]'); } catch { return []; }
+  });
+  useEffect(() => { try { localStorage.setItem('jobster_event_favorites', JSON.stringify(eventFavorites)); } catch {} }, [eventFavorites]);
+  const toggleEventFavorite = useCallback((eventId) => {
+    setEventFavorites(prev => prev.includes(eventId) ? prev.filter(id => id !== eventId) : [...prev, eventId]);
+  }, []);
   // tracker refresh signal — incremented when a job is added or removed
   const [trackerRefreshKey, setTrackerRefreshKey] = useState(0);
   // maps job URL/title → candidature DB id, so the 🔖 icon can toggle (undo)
@@ -661,6 +669,8 @@ function App() {
             onCreateAndAssign={(name, emoji) => createAndAssign(activeChat, name, emoji)}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}
+            eventFavorites={eventFavorites}
+            onToggleEventFavorite={toggleEventFavorite}
             savedCandidatures={savedCandidatures}
             onAddToTracker={(job, id) => {
               setTrackerRefreshKey(k => k + 1);
@@ -783,6 +793,8 @@ function App() {
                     onCreateAndAssign={(name, emoji) => createAndAssign(activeChat, name, emoji)}
                     favorites={favorites}
                     onToggleFavorite={toggleFavorite}
+                    eventFavorites={eventFavorites}
+                    onToggleEventFavorite={toggleEventFavorite}
                     savedCandidatures={savedCandidatures}
                     onAddToTracker={(job, id) => {
                       setTrackerRefreshKey(k => k + 1);

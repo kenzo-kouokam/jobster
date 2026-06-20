@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import JobCard from './JobCard';
+import EventCard from './EventCard';
 import './Message.css';
 
 const BATCH = 8;
@@ -27,7 +28,7 @@ function RomeCard({ content }) {
   );
 }
 
-export default function Message({ role, content, offres, isError, isRome, analysedJob, favorites, onToggleFavorite, onAnalyzeJob, onAddToTracker, onRemoveFromTracker, savedCandidatures, onQuickAction }) {
+export default function Message({ role, content, offres, evenements, isError, isRome, analysedJob, favorites, onToggleFavorite, onAnalyzeJob, onAddToTracker, onRemoveFromTracker, savedCandidatures, onQuickAction, eventFavorites, onToggleEventFavorite, onDiscoverEvent }) {
   const [shown, setShown] = useState(BATCH);
   const [trackerState, setTrackerState] = useState(null); // null | 'adding' | 'removing' | 'error'
   const carouselRef = useRef(null);
@@ -211,6 +212,20 @@ export default function Message({ role, content, offres, isError, isRome, analys
               ›
             </button>
 
+          </div>
+        )}
+
+        {evenements && evenements.length > 0 && (
+          <div className="event-cards-grid">
+            {evenements.map((ev, i) => (
+              <EventCard
+                key={ev.id || i}
+                event={ev}
+                isFavorite={!!eventFavorites?.includes(ev.id)}
+                onToggleFavorite={() => onToggleEventFavorite?.(ev.id)}
+                onDiscover={onDiscoverEvent}
+              />
+            ))}
           </div>
         )}
       </div>
