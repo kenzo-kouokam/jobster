@@ -6,7 +6,7 @@ import Tracker from './components/Tracker';
 import ProfileForm from './components/ProfileForm';
 import DocumentsView from './components/DocumentsView';
 import Toast from './components/Toast';
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, LLM_LABEL } from './config';
 
 const EMOJI_OPTIONS = [
   '📁','📂','⭐','🎯','🚀','💼','🎓','📈','📊','💡',
@@ -571,7 +571,7 @@ function App() {
                 <div className="user-avatar-lg">C</div>
                 <div className="user-details">
                   <p className="user-name">Candidat·e</p>
-                  <p className="user-sub">Agent IA · Qwen3:1.7b</p>
+                  <p className="user-sub">Agent IA · {LLM_LABEL}</p>
                 </div>
                 <div className="sb-footer-status">
                   <span className="status-dot" />
@@ -598,7 +598,7 @@ function App() {
         {/* ── Landing (no chat open) ── */}
         {activeView === 'landing' && (
           <div className="landing">
-            <div className="landing-badge"><span className="landing-dot" /> Agent IA actif · Qwen3:1.7b</div>
+            <div className="landing-badge"><span className="landing-dot" /> Agent IA actif · {LLM_LABEL}</div>
             <h1 className="landing-title">Trouve ton emploi<br /><span>avec sérénité.</span></h1>
             <p className="landing-sub">Recherche, analyse, postule. Ton agent IA s'occupe du reste.</p>
             <button className="landing-btn" onClick={() => startNewChat()}>Commencer une recherche →</button>
