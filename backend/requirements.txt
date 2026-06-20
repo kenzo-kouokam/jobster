@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+ollama
+requests
+python-dotenv
+beautifulsoup4
+pydantic
+pdfplumber
+python-multipart
+python-docx
+reportlab
+icalendar
+playwright
+lxml

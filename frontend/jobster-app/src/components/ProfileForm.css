@@ -1,0 +1,581 @@
+/* ══════════════════════════════════════════
+   PROFILE FORM — Mon Profil view
+══════════════════════════════════════════ */
+
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.profile-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Tip banner ── */
+.profile-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--blue-soft, #EFF3FF);
+  border: 1px solid var(--blue-mid, #9BB0E8);
+  border-radius: var(--radius, 10px);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text, #1A1915);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.profile-tip-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Active profile badge (header) ── */
+.profile-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--green, #1E6B3C);
+  background: var(--green-soft, #EBF7F0);
+  border: 1px solid var(--green-mid, #8DD4B0);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+.profile-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green, #1E6B3C);
+}
+
+/* ── Sections ── */
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-section {
+  background: var(--bg2, #FAFAF8);
+  border: 1.5px solid var(--border, #E8E6E0);
+  border-radius: var(--radius, 10px);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #1A1915);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border, #E8E6E0);
+}
+
+/* ── Field layout ── */
+.profile-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+.profile-field--wide { flex: 2; }
+
+.profile-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text, #1A1915);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.profile-label-hint {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-muted, #6B6560);
+}
+
+/* ── Inputs ── */
+.profile-input,
+.profile-textarea {
+  background: var(--bg, #FFFFFF);
+  border: 1.5px solid var(--border, #E8E6E0);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text, #1A1915);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.profile-input::placeholder,
+.profile-textarea::placeholder {
+  color: var(--text-light, #B5B0A8);
+}
+.profile-input:focus,
+.profile-textarea:focus {
+  border-color: var(--blue, #3B63D0);
+  box-shadow: 0 0 0 3px rgba(59, 99, 208, 0.10);
+}
+
+.profile-textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.55;
+}
+
+/* ── Footer ── */
+.profile-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 20px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border, #E8E6E0);
+  flex-wrap: wrap;
+}
+
+.profile-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--blue, #3B63D0);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.profile-save-btn:hover:not(:disabled) { background: #2a52b8; }
+.profile-save-btn:disabled,
+.profile-save-btn.disabled { opacity: 0.5; cursor: default; }
+.profile-save-btn.saving { background: var(--blue-mid, #9BB0E8); cursor: default; }
+
+.profile-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.profile-save-msg {
+  font-size: 13px;
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+}
+.profile-save-msg--ok    { color: var(--green, #1E6B3C); }
+.profile-save-msg--error { color: #C0392B; }
+
+/* ── CV Upload section ── */
+.cv-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--green-soft, #EBF7F0);
+  border: 1px solid var(--green-mid, #8DD4B0);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.cv-current-icon { font-size: 20px; flex-shrink: 0; }
+.cv-current-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.cv-current-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #1A1915);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cv-current-date {
+  font-size: 11px;
+  color: var(--text-muted, #6B6560);
+}
+.cv-active-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green, #1E6B3C);
+  background: #fff;
+  border: 1px solid var(--green-mid, #8DD4B0);
+  border-radius: 20px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
+.cv-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cv-upload-hint {
+  font-size: 12.5px;
+  color: var(--text-muted, #6B6560);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.cv-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Hidden <input type="file"> wrapped in styled label */
+.cv-file-label { display: inline-flex; }
+.cv-file-input { display: none; }
+.cv-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text, #1A1915);
+  background: var(--bg, #fff);
+  border: 1.5px solid var(--border, #E8E6E0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cv-file-label:hover .cv-file-btn {
+  border-color: var(--blue-mid, #9BB0E8);
+  background: var(--blue-soft, #EFF3FF);
+}
+
+.cv-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  background: var(--blue, #3B63D0);
+  color: #fff;
+  white-space: nowrap;
+}
+.cv-upload-btn:hover:not(:disabled) { background: #2a52b8; }
+.cv-upload-btn:disabled { opacity: 0.5; cursor: default; }
+.cv-upload-btn.done { background: var(--green, #1E6B3C); }
+.cv-upload-btn.error { background: #C0392B; }
+
+.cv-file-ready {
+  font-size: 12px;
+  color: var(--text-muted, #6B6560);
+  margin: 0;
+}
+.cv-file-ready strong { color: var(--text, #1A1915); }
+
+/* ── CV text preview ── */
+.cv-preview-block {
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+.cv-preview-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--blue, #3B63D0);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cv-preview-toggle:hover { text-decoration: underline; }
+
+.cv-preview-content {
+  margin-top: 8px;
+  border: 1px solid var(--border, #E8E6E0);
+  border-radius: 8px;
+  background: var(--bg2, #F9F8F6);
+  padding: 12px 14px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.cv-preview-text {
+  font-family: monospace;
+  font-size: 11.5px;
+  color: var(--text-muted, #6B6560);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  line-height: 1.55;
+}
+.cv-preview-empty {
+  font-size: 12.5px;
+  color: #C0392B;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── CV text edit mode ── */
+.cv-edit-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text, #1A1915);
+  background: var(--bg, #fff);
+  border: 1.5px solid var(--blue-mid, #9BB0E8);
+  border-radius: 6px;
+  padding: 10px 12px;
+  resize: vertical;
+  outline: none;
+}
+.cv-edit-textarea:focus { border-color: var(--blue, #3B63D0); }
+
+.cv-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.cv-edit-btn {
+  background: none;
+  border: 1px solid var(--border, #E8E6E0);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--text, #1A1915);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cv-edit-btn:hover { border-color: var(--blue-mid, #9BB0E8); background: var(--blue-soft, #EFF3FF); }
+
+.cv-edit-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  background: var(--blue, #3B63D0);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.cv-edit-save-btn:hover:not(:disabled) { background: #2a52b8; }
+.cv-edit-save-btn:disabled { opacity: 0.55; cursor: default; }
+.cv-edit-save-btn.saving { opacity: 0.7; cursor: default; }
+.cv-edit-save-btn.error  { background: #C0392B; }
+
+.cv-edit-cancel-btn {
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--text-muted, #6B6560);
+  cursor: pointer;
+}
+.cv-edit-cancel-btn:hover { color: var(--text, #1A1915); }
+
+.cv-edit-saved-msg {
+  font-size: 12px;
+  color: var(--green, #1E6B3C);
+  font-weight: 500;
+}
+
+/* ── Multi-select chips ── */
+.multi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.multi-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border, #E8E6E0);
+  background: var(--bg2, #FAFAF8);
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--text-muted, #6B6560);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.multi-chip.selected {
+  background: var(--blue-soft, #EFF3FF);
+  border-color: var(--blue-mid, #9BB0E8);
+  color: var(--blue, #3B63D0);
+  font-weight: 600;
+}
+.multi-chip:hover:not(.selected) {
+  border-color: var(--blue-mid, #9BB0E8);
+  background: var(--bg, #fff);
+}
+
+/* ── Select inputs ── */
+.profile-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border, #E8E6E0);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text, #1A1915);
+  background: var(--bg, #FFFFFF);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: auto;
+  box-sizing: border-box;
+}
+.profile-select:focus {
+  outline: none;
+  border-color: var(--blue, #3B63D0);
+  box-shadow: 0 0 0 3px rgba(59, 99, 208, 0.10);
+}
+
+/* ── Radio chips (mode travail) ── */
+.profile-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.profile-radio-hidden {
+  display: none;
+}
+.profile-radio-chip {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border, #E8E6E0);
+  background: var(--bg2, #FAFAF8);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-muted, #6B6560);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+  display: inline-block;
+}
+.profile-radio-chip.selected {
+  background: var(--blue-soft, #EFF3FF);
+  border-color: var(--blue, #3B63D0);
+  color: var(--blue, #3B63D0);
+  font-weight: 600;
+}
+.profile-radio-chip:hover:not(.selected) {
+  border-color: var(--blue-mid, #9BB0E8);
+  background: var(--bg, #fff);
+}
+
+/* ── Salary input with € unit ── */
+.salary-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.salary-input-wrap .profile-input {
+  padding-right: 28px;
+}
+.salary-unit {
+  position: absolute;
+  right: 10px;
+  color: var(--text-muted, #6B6560);
+  font-size: 13px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Narrow field variant (salaire_type select) ── */
+.profile-field--narrow {
+  max-width: 150px;
+  flex: none;
+}
+
+/* ── Profile completeness bar ── */
+.profile-completion-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  margin: 0 24px 18px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.profile-completion-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.profile-completion-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.profile-completion-hint {
+  font-size: 11.5px;
+  opacity: 0.75;
+}
+.profile-completion-track {
+  width: 100px;
+  height: 6px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.profile-completion-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .profile-body { padding: 0 16px 16px; }
+  .profile-row  { flex-direction: column; }
+  .profile-field--wide { flex: 1; }
+  .cv-upload-row { flex-direction: column; align-items: flex-start; }
+  .cv-file-btn { max-width: 100%; }
+}

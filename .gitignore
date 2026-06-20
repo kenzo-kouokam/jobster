@@ -1,0 +1,24 @@
+CLAUDE.md
+venv/
+__pycache__/
+*.pyc
+*.pyo
+offres_jobster.json
+.env
+
+backend/__pycache__/
+scraping/__pycache__/
+
+# Generated / user data — never commit these
+scraping/*.db
+scraping/profil.json
+scraping/cv_utilisateur.pdf
+scraping/*.txt
+scraping/*.docx
+scraping/*.pdf
+
+# Node
+frontend/jobster-app/node_modules/
+
+# Soutenance — local uniquement
+soutenance/
