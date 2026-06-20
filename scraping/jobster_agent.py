@@ -826,11 +826,27 @@ def scraper_infos_entreprise(message_complet):
         print(f"  [Outil 8] Societe.com OK")
     except: pass
 
+    # Si les 3 sources ont échoué, il n'y a aucune donnée réelle à synthétiser —
+    # appeler le LLM dans ce cas produirait un rapport entièrement fabriqué
+    # (constaté : il invente même un nom de dirigeant et un capital social pour
+    # une entreprise qui n'existe pas). On préfère l'admettre honnêtement.
+    sources_ok = [s for s in (infos_glassdoor, infos_news, infos_societe) if s != "Non accessible."]
+    if not sources_ok:
+        return (f"Je n'ai trouvé aucune information vérifiable sur **{nom_entreprise}** "
+                f"(Glassdoor, Google Actualités et Societe.com n'ont rien renvoyé).\n\n"
+                f"Vérifie l'orthographe du nom, ou il s'agit peut-être d'une structure trop "
+                f"petite/récente pour être référencée sur ces sites.")
+
     prompt = f"""Synthétise ces infos sur "{nom_entreprise}" pour un candidat.
 
 GLASSDOOR : {infos_glassdoor[:500]}
 ACTUALITES : {infos_news[:500]}
 DONNEES LEGALES : {infos_societe[:500]}
+
+IMPORTANT : base-toi UNIQUEMENT sur les informations ci-dessus. Si une section n'a pas
+d'information exploitable dans les sources, écris explicitement "Information non disponible"
+plutôt que d'inventer un fait (nom de dirigeant, capital social, adresse, chiffre...).
+N'utilise jamais de placeholder du type [insérer ...] ou [à compléter].
 
 Redige un rapport en français avec :
 🏢 PRESENTATION DE L'ENTREPRISE

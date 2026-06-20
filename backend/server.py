@@ -79,12 +79,39 @@ MOTS_RECHERCHE = [
 ]
 
 MOTS_EVENEMENTS = [
-    "évènement", "evenement", "événement", "salon emploi", "job dating",
-    "forum emploi", "salon recrutement", "job fair", "journée recrutement",
-    "événements emploi", "evènements emploi",
-    # Variantes naturelles supplémentaires (gap routing)
-    "salon", "salons", "speed recruiting", "matinale recrutement",
-    "recrutement près de", "recrutement pres de", "job datings",
+    # Évènement / évènements (avec et sans accents, singulier/pluriel)
+    "évènement", "evenement", "événement", "evenements", "évènements", "événements",
+    "événements emploi", "evènements emploi", "evenements emploi",
+    # Salon(s)
+    "salon emploi", "salon de l'emploi", "salon de l emploi", "salons emploi",
+    "salon recrutement", "salon de recrutement", "salon professionnel",
+    "salon", "salons",
+    # Job dating / speed recruiting / variantes anglicismes
+    "job dating", "job datings", "jobdating", "speed recruiting", "speed dating recrutement",
+    "speed job dating", "job fair", "career fair", "hiring event", "recruitment day",
+    "recruitment fair", "open house recrutement",
+    # Forum / journée / matinale / semaine emploi
+    "forum emploi", "forum de l'emploi", "forum de l emploi", "forum recrutement",
+    "journée recrutement", "journée de recrutement", "journée de l'emploi",
+    "journées de l'emploi", "matinale recrutement", "matinale de recrutement",
+    "semaine de l'emploi", "semaine de l emploi", "semaine pour l'emploi",
+    # Atelier / webinaire / réunion d'information / conférence
+    "atelier emploi", "atelier recherche d'emploi", "atelier recherche d emploi",
+    "webinaire emploi", "webinaire recrutement", "réunion d'information emploi",
+    "reunion d'information emploi", "conférence emploi", "conference emploi",
+    "table ronde emploi", "café de l'emploi", "cafe de l'emploi",
+    # Recrutement (variantes "événement de/autour du recrutement")
+    "action recrutement", "opération recrutement", "operation recrutement",
+    "recrutement express", "recrutement immersif", "session de recrutement",
+    "recrutement près de", "recrutement pres de", "recrutement dans ma région",
+    "recrutement dans ma region",
+    # Portes ouvertes / immersion / visite entreprise (souvent liés à ces événements)
+    "portes ouvertes", "journée portes ouvertes", "immersion entreprise",
+    "visite d'entreprise", "visite d entreprise", "visite entreprise",
+    # Termes génériques utiles pour capter une formulation libre
+    "près de chez moi pour l'emploi", "pres de chez moi pour l'emploi",
+    "évènements près de chez moi", "evenements pres de chez moi",
+    "quoi faire pour trouver un emploi cette semaine",
 ]
 
 MOTS_BONNE_BOITE = [
@@ -818,6 +845,29 @@ def appeler_outil_mcp(message: str):
 
     except Exception as e:
         print(f"[MCP] Erreur : {e}")
+        # Si le message correspond clairement à un outil déterministe (tracker,
+        # rapport entreprise, bonne boite, évènements, rome, lettre, matching,
+        # analyse d'offre) et qu'une exception est survenue pendant son exécution
+        # (ex : DB momentanément verrouillée après un redémarrage à froid Render),
+        # NE PAS retomber sur Ollama : il répondrait sans aucune donnée réelle et
+        # fabriquerait une réponse plausible mais fausse (constaté en test : faux
+        # IDs de candidature, fausses dates). Mieux vaut un message d'erreur honnête.
+        d_err = message.lower()
+        mots_outils_deterministes = (
+            ["tracker", "mes candidatures", "ajouter candidature", "voir candidature",
+             "statut candidature", "rapport entreprise", "infos entreprise",
+             "analyse entreprise", "que sais-tu de", "lettre", "motivation",
+             "match", "score", "compatible", "analyse cette offre", "analyse offre",
+             "décrypte offre"]
+            + MOTS_EVENEMENTS + MOTS_BONNE_BOITE + MOTS_ROME + MOTS_MARCHE + MOTS_AGENCE
+        )
+        if any(m in d_err for m in mots_outils_deterministes):
+            return (
+                "Une erreur technique est survenue pendant le traitement de cette demande "
+                "(souvent lié à un redémarrage du serveur après une période d'inactivité). "
+                "Réessaie dans quelques secondes.",
+                None, False, False, None
+            )
         return None, None, True, False, None
 
 
